@@ -19,7 +19,7 @@ jobs:
           cache: 'npm'
       - name: Log cron trigger
         run: |
-          echo "🕒 Cron triggered at: $(date -u)"
+          echo "Cron triggered at: $(date -u)"
           echo "Repository: ${{ github.repository }}"
           echo "Workflow: ${{ github.workflow }}"
           echo "Run ID: ${{ github.run_id }}"
