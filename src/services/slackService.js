@@ -16,20 +16,39 @@ export async function sendReminders(tasks) {
   });
 
   for (const [slackId, assigneeTasks] of Object.entries(tasksByAssignee)) {
-    const taskList = assigneeTasks
-      .map(
-        (t) =>
-          `• *${t.name}* (status: ${t.status}) has *no time tracked* (${t.url})`
-      )
-      .join("\n");
+    const tasksBySpace = {};
+    assigneeTasks.forEach((t) => {
+      const spaceName = t.spaceName || "Unknown Space";
+      if (!tasksBySpace[spaceName]) tasksBySpace[spaceName] = [];
+      tasksBySpace[spaceName].push(t);
+    });
+
+    const spaceSections = Object.entries(tasksBySpace)
+      .map(([spaceName, spaceTasks]) => {
+        const taskList = spaceTasks
+          .map(
+            (t) =>
+              `• *${t.name}* (status: ${t.status}) has *no time tracked* (${t.url})`
+          )
+          .join("\n");
+        return `*Space: ${spaceName}*\nYou have tasks missing time tracking:\n${taskList}`;
+      })
+      .join("\n\n");
+
+    const fullMessage = `You have tasks missing time tracking across your projects:\n\n${spaceSections}`;
+
     try {
       await slackClient.chat.postMessage({
         channel: slackId,
-        text: `You have tasks missing time tracking:\n${taskList}`,
+        text: fullMessage,
         unfurl_links: false,
         unfurl_media: false,
       });
-      log(`Reminder sent to <@${slackId}> (${assigneeTasks.length} tasks)`);
+      log(
+        `Reminder sent to <@${slackId}> (${assigneeTasks.length} tasks across ${
+          Object.keys(tasksBySpace).length
+        } spaces)`
+      );
     } catch (err) {
       error(`Slack DM failed for ${slackId}:`, err.data || err.message);
     }

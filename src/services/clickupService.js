@@ -61,12 +61,17 @@ export async function getAllRelevantTasks() {
   const spaces = await getAllSpaces();
 
   for (const space of spaces) {
+    const spaceName = space.name;
     const folders = await getFoldersInSpace(space.id);
     for (const folder of folders) {
       const lists = await getListsInFolder(folder.id);
       for (const list of lists) {
         const tasks = await getTasksInList(list.id);
-        allTasks.push(...tasks);
+        const tasksWithSpace = tasks.map((t) => ({
+          ...t,
+          spaceName: spaceName,
+        }));
+        allTasks.push(...tasksWithSpace);
       }
     }
   }
