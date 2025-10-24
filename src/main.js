@@ -25,10 +25,14 @@ async function runReminderCheck() {
   }
 }
 
-runReminderCheck();
+await runReminderCheck();
 
-cron.schedule("0 17 * * *", runReminderCheck);
-log("Bot scheduled—waiting for next run.");
+if (process.env.NODE_ENV === "development") {
+  cron.schedule("*/5 * * * *", runReminderCheck);
+  log("Dev mode: Running every 5 minutes for testing.");
+} else {
+  log("Production run complete—no further scheduling needed.");
+}
 
 if (process.env.NODE_ENV !== "development") {
   process.exit(0);
