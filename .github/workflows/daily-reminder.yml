@@ -2,7 +2,7 @@ name: Daily ClickUp Reminder
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '00 14 * * *'
   workflow_dispatch:
 
 jobs:
