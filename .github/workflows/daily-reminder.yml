@@ -1,0 +1,30 @@
+name: Daily ClickUp Reminder
+
+on:
+  schedule:
+    - cron: '0 16 * * *' 
+  workflow_dispatch: 
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+          cache: 'npm'  
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run reminder script
+        env:
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          CLICKUP_TOKEN: ${{ secrets.CLICKUP_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          NODE_ENV: production
+        run: npm start
