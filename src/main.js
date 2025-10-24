@@ -30,6 +30,6 @@ runReminderCheck();
 cron.schedule("0 17 * * *", runReminderCheck);
 log("Bot scheduled—waiting for next run.");
 
-if (process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV !== "development") {
   process.exit(0);
 }
