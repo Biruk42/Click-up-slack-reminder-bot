@@ -1,8 +1,16 @@
 {
+  "name": "clickup-bot",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "NODE_ENV=development node src/main.js"
+  },
   "dependencies": {
     "@slack/web-api": "^7.11.0",
     "axios": "^1.7.2",
-    "dotenv": "^16.4.5",
-    "node-cron": "^3.0.3"
+    "dotenv": "^16.6.1",
+    "node-cron": "^4.2.1",
+    "node-fetch": "^3.3.2"
   }
 }
