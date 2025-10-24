@@ -3,7 +3,6 @@ import { config } from "../config/index.js";
 import { log, error } from "../utils/logger.js";
 
 const API_BASE = "https://api.clickup.com/api/v2";
-
 async function apiCall(endpoint, params = {}) {
   try {
     const res = await axios.get(`${API_BASE}${endpoint}`, {
