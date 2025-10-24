@@ -2,7 +2,7 @@ name: Daily ClickUp Reminder
 
 on:
   schedule:
-    - cron: '40 15 * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -17,6 +17,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Log cron trigger
+        run: |
+          echo "🕒 Cron triggered at: $(date -u)"
+          echo "Repository: ${{ github.repository }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Event name: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
 
       - name: Install dependencies
         run: npm ci
