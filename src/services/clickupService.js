@@ -61,6 +61,11 @@ export async function getAllRelevantTasks() {
 
   for (const space of spaces) {
     const spaceName = space.name;
+
+    if (!config.trackedSpaces.includes(spaceName)) {
+      continue;
+    }
+
     const folders = await getFoldersInSpace(space.id);
     for (const folder of folders) {
       const lists = await getListsInFolder(folder.id);

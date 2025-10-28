@@ -9,4 +9,5 @@ export const config = {
   slackToken: process.env.SLACK_TOKEN,
   relevantStatuses: ["in progress", "code review", "testing", "ready to prod"],
   clickupToSlack: mappings,
+  trackedSpaces: ["Poker Real Gaming & Store"],
 };
