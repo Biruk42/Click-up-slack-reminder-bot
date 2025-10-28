@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import {
   getAllRelevantTasks,
-  filterMissingTimeTasks,
+  filterMissingTasks,
 } from "./services/clickupService.js";
 import { sendReminders } from "./services/slackService.js";
 import { log } from "./utils/logger.js";
@@ -10,11 +10,11 @@ async function runReminderCheck() {
   log("Starting");
   try {
     const allTasks = await getAllRelevantTasks();
-    const missingTimeTasks = filterMissingTimeTasks(allTasks);
-    log(`Found ${missingTimeTasks.length} tasks with no time tracked.`);
+    const missingTasks = filterMissingTasks(allTasks);
+    log(`Found ${missingTasks.length} tasks missing time or status update.`);
 
-    if (missingTimeTasks.length > 0) {
-      await sendReminders(missingTimeTasks);
+    if (missingTasks.length > 0) {
+      await sendReminders(missingTasks);
     } else {
       log("No missing");
     }
