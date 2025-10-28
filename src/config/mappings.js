@@ -1,4 +1,5 @@
 export default {
-  54582239: "U07GEC2GC85",
-  88691412: "U07H62GM264", // Leul
+  "Biruk Kassaye": "U07GEC2GC85",
+  // "Leul B": "U07H62GM264",
+  "Leul B": "U07GEC2GC85",
 };

@@ -4,11 +4,21 @@ import { log, error } from "../utils/logger.js";
 
 const slackClient = new WebClient(config.slackToken);
 
+function findSlackIdByClickupName(name) {
+  if (!name) return null;
+  const normalizedName = name.toLowerCase().replace(/\s+/g, "");
+  for (const [clickupName, slackId] of Object.entries(config.clickupToSlack)) {
+    const normalizedKey = clickupName.toLowerCase().replace(/\s+/g, "");
+    if (normalizedKey === normalizedName) return slackId;
+  }
+  return null;
+}
+
 export async function sendReminders(tasks) {
   const tasksByAssignee = {};
   tasks.forEach((t) => {
-    t.assignees.forEach((clickupId) => {
-      const slackId = config.clickupToSlack[clickupId];
+    t.assignees.forEach((clickupName) => {
+      const slackId = findSlackIdByClickupName(clickupName);
       if (!slackId) return;
       if (!tasksByAssignee[slackId]) tasksByAssignee[slackId] = [];
       tasksByAssignee[slackId].push(t);
