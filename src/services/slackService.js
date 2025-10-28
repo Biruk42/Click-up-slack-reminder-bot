@@ -38,25 +38,31 @@ export async function sendReminders(tasks) {
         const taskList = spaceTasks
           .map((t) => {
             const issues = [];
-            if (t.time_spent === 0) issues.push("no time tracked");
+            if (t.time_spent === 0) issues.push("time not tracked");
             const today = new Date();
             const isUpdatedToday =
               t.status_update_date &&
               today.toDateString() ===
                 new Date(t.status_update_date).toDateString();
             if (!t.status_update || !isUpdatedToday)
-              issues.push("no status update for today");
+              issues.push("no status update");
 
-            return `• *${t.name}* (status: ${t.status}) has ${issues.join(
-              " and "
-            )} (${t.url})`;
+            return [
+              `  *• ${t.name}*`,
+              `      *￫ Status:* ${t.status}`,
+              issues.length ? `      *￫ Issues:* ${issues.join(", ")}` : "",
+              `      *￫ Link:* ${t.url}`,
+            ]
+              .filter(Boolean)
+              .join("\n");
           })
-          .join("\n");
-        return `*Space: ${spaceName}*\nYou have tasks missing time tracking:\n${taskList}`;
+          .join("\n\n");
+
+        return `*${spaceName}*\n${taskList}`;
       })
       .join("\n\n");
 
-    const fullMessage = `You have tasks missing time tracking across your projects:\n\n${spaceSections}`;
+    const fullMessage = `You have tasks missing time tracked or status updates:\n\n${spaceSections}`;
 
     try {
       await slackClient.chat.postMessage({
