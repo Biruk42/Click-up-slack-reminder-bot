@@ -48,7 +48,7 @@ export async function getTasksInList(listId) {
     name: t.name,
     status: t.status.status.toLowerCase(),
     time_spent: t.time_spent || 0,
-    assignees: t.assignees.map((a) => a.id),
+    assignees: t.assignees.map((a) => a.username),
     url: t.url,
   }));
   log(`Fetched ${tasks.length} tasks in list ${listId}`);
