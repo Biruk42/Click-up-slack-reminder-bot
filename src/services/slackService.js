@@ -36,10 +36,21 @@ export async function sendReminders(tasks) {
     const spaceSections = Object.entries(tasksBySpace)
       .map(([spaceName, spaceTasks]) => {
         const taskList = spaceTasks
-          .map(
-            (t) =>
-              `• *${t.name}* (status: ${t.status}) has *no time tracked* (${t.url})`
-          )
+          .map((t) => {
+            const issues = [];
+            if (t.time_spent === 0) issues.push("no time tracked");
+            const today = new Date();
+            const isUpdatedToday =
+              t.status_update_date &&
+              today.toDateString() ===
+                new Date(t.status_update_date).toDateString();
+            if (!t.status_update || !isUpdatedToday)
+              issues.push("no status update for today");
+
+            return `• *${t.name}* (status: ${t.status}) has ${issues.join(
+              " and "
+            )} (${t.url})`;
+          })
           .join("\n");
         return `*Space: ${spaceName}*\nYou have tasks missing time tracking:\n${taskList}`;
       })

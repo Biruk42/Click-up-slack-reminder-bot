@@ -44,13 +44,30 @@ export async function getListsInFolder(folderId) {
 // Fetch tasks in a list
 export async function getTasksInList(listId) {
   const data = await apiCall(`/list/${listId}/task`, { include_closed: true });
-  const tasks = data.tasks.map((t) => ({
-    name: t.name,
-    status: t.status.status.toLowerCase(),
-    time_spent: t.time_spent || 0,
-    assignees: t.assignees.map((a) => a.username),
-    url: t.url,
-  }));
+  const tasks = data.tasks.map((t) => {
+    const statusUpdateField = t.custom_fields?.find(
+      (f) => f.name.toLowerCase() === "status update"
+    );
+
+    const statusUpdateValue =
+      statusUpdateField?.value && typeof statusUpdateField.value === "string"
+        ? statusUpdateField.value.trim()
+        : null;
+
+    return {
+      name: t.name,
+      status: t.status.status.toLowerCase(),
+      time_spent: t.time_spent || 0,
+      assignees: t.assignees.map((a) => a.username),
+      url: t.url,
+      spaceName: t.space?.name || "",
+      status_update: statusUpdateValue,
+      status_update_date: statusUpdateField?.date_updated
+        ? new Date(Number(statusUpdateField.date_updated))
+        : null,
+    };
+  });
+
   log(`Fetched ${tasks.length} tasks in list ${listId}`);
   return tasks;
 }
@@ -84,10 +101,27 @@ export async function getAllRelevantTasks() {
   return allTasks;
 }
 
-export function filterMissingTimeTasks(tasks) {
-  return tasks.filter(
-    (t) =>
-      config.relevantStatuses.some((status) => t.status.includes(status)) &&
-      t.time_spent === 0
-  );
+export function filterMissingTasks(tasks) {
+  const today = new Date();
+  const isSameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  return tasks.filter((t) => {
+    const isRelevantStatus = config.relevantStatuses.some((status) =>
+      t.status.includes(status)
+    );
+
+    if (!isRelevantStatus) return false;
+
+    const noTimeTracked = t.time_spent === 0;
+
+    const noRecentStatusUpdate =
+      !t.status_update ||
+      !t.status_update_date ||
+      !isSameDay(new Date(t.status_update_date), today);
+
+    return noTimeTracked || noRecentStatusUpdate;
+  });
 }
