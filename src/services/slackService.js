@@ -45,7 +45,7 @@ export async function sendReminders(tasks) {
               today.toDateString() ===
                 new Date(t.status_update_date).toDateString();
             if (!t.status_update || !isUpdatedToday)
-              issues.push("no status update");
+              issues.push("no comment update");
 
             return [
               `  *• ${t.name}*`,
