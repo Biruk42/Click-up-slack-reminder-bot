@@ -50,7 +50,7 @@ export async function getTasksInList(listId) {
   async function getTaskComments(taskId) {
     try {
       const commentsData = await apiCall(`/task/${taskId}/comment`);
-      await new Promise((r) => setTimeout(r, 100)); // small delay per task
+      await new Promise((r) => setTimeout(r, 100));
       return commentsData.comments || [];
     } catch (err) {
       error(`Failed to fetch comments for task ${taskId}`, err.message);
@@ -83,12 +83,6 @@ export async function getTasksInList(listId) {
     const assigneeField = findField(assigneeFieldName);
     const timeTrackedField = findField(timeTrackedFieldName);
 
-    log(
-      `🔍 Task: "${t.name}" | Status: "${status}" | ` +
-        `Found assigneeField: ${assigneeField} (${assigneeFieldName}) | ` +
-        `Found timeTrackedField: ${timeTrackedField} (${timeTrackedFieldName})`
-    );
-
     let assignees = [];
     if (["code review", "ready to prod"].includes(status)) {
       if (assigneeField?.value && Array.isArray(assigneeField.value)) {
@@ -108,15 +102,6 @@ export async function getTasksInList(listId) {
     const timeTrackedValue = ["code review", "ready to prod"].includes(status)
       ? Number(timeTrackedField?.value || 0)
       : Number(timeTrackedField?.value || 0);
-
-    log(
-      `🔍 Task: "${t.name}" | Status: "${status}" | Using assigneeField="${assigneeFieldName}" | ` +
-        `timeTrackedField="${timeTrackedFieldName}" | Found assigneeField=${!!assigneeField} | ` +
-        `Found timeTrackedField=${!!timeTrackedField} | ` +
-        `Assignees used: [${
-          assignees.join(", ") || "none"
-        }] | Time tracked: ${timeTrackedValue}`
-    );
 
     const comments = await getTaskComments(t.id);
     const today = new Date();
@@ -141,22 +126,6 @@ export async function getTasksInList(listId) {
     const lastCommentDate = lastComment
       ? new Date(Number(lastComment.date))
       : null;
-    log(
-      `   ↳ Assignees: [${assignees.join(
-        ", "
-      )}] | Time tracked: ${timeTrackedValue} | ` +
-        `Last comment: ${
-          lastCommentDate ? lastCommentDate.toISOString().split("T")[0] : "none"
-        }`
-    );
-    if (lastCommentDate) {
-      const isToday = isSameDay(new Date(lastCommentDate), today);
-      log(
-        `   ↳ Comment date check → ${
-          isToday ? "same day (today)" : "❌ not today"
-        }`
-      );
-    }
     tasks.push({
       name: t.name,
       status,
@@ -201,28 +170,6 @@ export async function getAllRelevantTasks() {
   return allTasks;
 }
 
-// export function filterMissingTasks(tasks) {
-//   const today = new Date();
-//   const isSameDay = (d1, d2) =>
-//     d1 &&
-//     d2 &&
-//     d1.getFullYear() === d2.getFullYear() &&
-//     d1.getMonth() === d2.getMonth() &&
-//     d1.getDate() === d2.getDate();
-
-//   return tasks.filter((t) => {
-//     const isRelevantStatus = config.relevantStatuses.some((status) =>
-//       t.status.includes(status)
-//     );
-//     if (!isRelevantStatus) return false;
-
-//     const noTimeTracked = t.time_spent === 0;
-//     const noRecentComment =
-//       !t.last_comment_date || !isSameDay(new Date(t.last_comment_date), today);
-
-//     return noTimeTracked || noRecentComment;
-//   });
-// }
 export function filterMissingTasks(tasks) {
   const today = new Date();
   const isSameDay = (d1, d2) =>
@@ -232,7 +179,7 @@ export function filterMissingTasks(tasks) {
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-  const filtered = tasks.filter((t) => {
+  return tasks.filter((t) => {
     const isRelevantStatus = config.relevantStatuses.some((status) =>
       t.status.includes(status)
     );
@@ -244,44 +191,4 @@ export function filterMissingTasks(tasks) {
 
     return noTimeTracked || noRecentComment;
   });
-
-  log(`Found ${filtered.length} tasks missing time or status update.`);
-
-  // 🔍 Detailed per-task logging
-  filtered.forEach((t, i) => {
-    const lastCommentStr = t.last_comment_date
-      ? new Date(t.last_comment_date).toISOString().split("T")[0]
-      : "none";
-    const isToday = t.last_comment_date
-      ? isSameDay(new Date(t.last_comment_date), today)
-      : false;
-
-    log(
-      [
-        `--- Missing Task #${i + 1} ---`,
-        `Name: ${t.name}`,
-        `Space: ${t.spaceName}`,
-        `Status: ${t.status}`,
-        `Time tracked: ${t.time_spent}`,
-        `Assignees: ${t.assignees.join(", ") || "none"}`,
-        `Last comment: ${lastCommentStr} ${
-          t.last_comment_date
-            ? isToday
-              ? "(today)"
-              : "(not today)"
-            : "(no comments)"
-        }`,
-        `Field context: ${
-          t.status === "code review"
-            ? "code review & qa / code reviewer & qa time tracked"
-            : t.status === "ready to prod"
-            ? "deployer / deployer time tracked"
-            : "assignee / time tracked"
-        }`,
-        "---------------------------",
-      ].join("\n")
-    );
-  });
-
-  return filtered;
 }
