@@ -42,16 +42,23 @@ export async function getFoldersInSpace(spaceId) {
 export async function getListsInFolder(folderId) {
   const data = await apiCall(`/folder/${folderId}/list`);
   if (!data.lists) return [];
-  const activeLists = data.lists.filter(
-    (l) => l.percent_complete === undefined || l.percent_complete < 100
-  );
 
-  log(
-    `Fetched ${data.lists.length} lists in folder ${folderId}, ` +
-      `${data.lists.length - activeLists.length} skipped (completed sprints)`
-  );
-  return activeLists;
+  const active = [];
+  const today = Date.now();
+
+  for (const l of data.lists) {
+    const due = l.due_date ? Number(l.due_date) : null;
+    const percent = l.percent_complete ?? 0;
+    const isDone = percent === 100 || (due && due < today);
+
+    if (!isDone) {
+      active.push(l);
+    }
+  }
+
+  return active;
 }
+
 // Fetch tasks in a list
 export async function getTasksInList(listId) {
   const data = await apiCall(`/list/${listId}/task`, { include_closed: true });
@@ -76,7 +83,7 @@ export async function getTasksInList(listId) {
       let assigneeFieldName = "assignee";
       let timeTrackedFieldName = "time tracked";
 
-      if (status === "code review") {
+      if (status === "code review" || status === "testing") {
         assigneeFieldName = "code review & qa";
         timeTrackedFieldName = "code reviewer & qa time tracked";
       } else if (status === "ready to prod") {
@@ -155,24 +162,22 @@ export async function getAllRelevantTasks() {
 
   for (const space of trackedSpaces) {
     const folders = await getFoldersInSpace(space.id);
+
     for (const folder of folders) {
       const lists = await getListsInFolder(folder.id);
 
-      if (lists.length === 0) {
-        log(`Skipping folder ${folder.name} (no active sprints)`);
-        continue;
-      }
+      if (lists.length === 0) continue;
 
       const allListTasks = await Promise.all(
-        lists.map((list) => getTasksInList(list.id))
+        lists.map(async (list) => getTasksInList(list.id))
       );
+
       for (const tasks of allListTasks) {
         allTasks.push(...tasks.map((t) => ({ ...t, spaceName: space.name })));
       }
     }
   }
 
-  log(`Total tasks across all active sprints: ${allTasks.length}`);
   return allTasks;
 }
 
@@ -190,11 +195,9 @@ export function filterMissingTasks(tasks) {
       t.status.includes(status)
     );
     if (!isRelevantStatus) return false;
-
     const noTimeTracked = t.time_spent === 0;
     const noRecentComment =
       !t.last_comment_date || !isSameDay(new Date(t.last_comment_date), today);
-
     return noTimeTracked || noRecentComment;
   });
 }
