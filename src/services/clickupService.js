@@ -51,9 +51,7 @@ export async function getListsInFolder(folderId) {
     const percent = l.percent_complete ?? 0;
     const isDone = percent === 100 || (due && due < today);
 
-    if (!isDone) {
-      active.push(l);
-    }
+    if (!isDone) active.push(l);
   }
 
   return active;
@@ -77,12 +75,10 @@ export async function getTasksInList(listId) {
   const tasks = await Promise.all(
     data.tasks.map(async (t) => {
       if (!t.status || !t.status.status) return null;
-
       const status = t.status.status.toLowerCase();
 
       let assigneeFieldName = "assignee";
       let timeTrackedFieldName = "time tracked";
-
       if (status === "code review" || status === "testing") {
         assigneeFieldName = "code review & qa";
         timeTrackedFieldName = "code reviewer & qa time tracked";
@@ -99,24 +95,23 @@ export async function getTasksInList(listId) {
       const assigneeField = findField(assigneeFieldName);
       const timeTrackedField = findField(timeTrackedFieldName);
 
+      const primaryAssignees =
+        Array.isArray(t.assignees) && t.assignees.length
+          ? t.assignees.map((a) => a.username || a.name).filter(Boolean)
+          : [];
+
       let assignees = [];
-      if (["code review", "ready to prod"].includes(status)) {
+      if (["code review", "testing", "ready to prod"].includes(status)) {
         if (Array.isArray(assigneeField?.value)) {
           assignees = assigneeField.value
             .map((v) => v.username || v.name)
             .filter(Boolean);
         }
       } else {
-        assignees =
-          Array.isArray(assigneeField?.value) && assigneeField.value.length
-            ? assigneeField.value
-                .map((v) => v.username || v.name)
-                .filter(Boolean)
-            : t.assignees.map((a) => a.username || a.name).filter(Boolean);
+        assignees = primaryAssignees;
       }
 
       const timeTrackedValue = Number(timeTrackedField?.value || 0);
-
       const comments = await getTaskComments(t.id);
 
       const lastComment = comments
@@ -133,16 +128,22 @@ export async function getTasksInList(listId) {
         })
         .sort((a, b) => Number(b.date) - Number(a.date))[0];
 
+      const needsCodeReviewerAssigned =
+        ["code review", "testing"].includes(status) &&
+        (!assigneeField?.value || assigneeField?.value.length === 0);
+
       return {
         name: t.name,
         status,
         time_spent: timeTrackedValue,
         assignees,
+        primaryAssignees,
         url: t.url,
         spaceName: t.space?.name || "",
         last_comment_date: lastComment
           ? new Date(Number(lastComment.date))
           : null,
+        needsCodeReviewerAssigned,
       };
     })
   );
@@ -165,7 +166,6 @@ export async function getAllRelevantTasks() {
 
     for (const folder of folders) {
       const lists = await getListsInFolder(folder.id);
-
       if (lists.length === 0) continue;
 
       const allListTasks = await Promise.all(

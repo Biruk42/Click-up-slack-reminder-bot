@@ -7,7 +7,7 @@ export const config = {
   teamId: process.env.TEAM_ID,
   clickupToken: process.env.CLICKUP_TOKEN,
   slackToken: process.env.SLACK_TOKEN,
-  relevantStatuses: relevantStatuses,
-  clickupToSlack: clickupToSlack,
-  trackedSpaces: trackedSpaces,
+  relevantStatuses,
+  clickupToSlack,
+  trackedSpaces,
 };
