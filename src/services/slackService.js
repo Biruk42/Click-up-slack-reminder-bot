@@ -107,23 +107,35 @@ export async function sendReminders(tasks) {
     }
   }
 
-  const pmSlackIds = projectManagers
-    .map((name) => clickupToSlack[name])
-    .filter(Boolean);
+  const tasksBySpace = {};
+  Object.values(tasksByAssignee)
+    .flat()
+    .forEach((t) => {
+      const spaceName = t.spaceName || "Unknown Space";
+      if (!tasksBySpace[spaceName]) tasksBySpace[spaceName] = [];
+      tasksBySpace[spaceName].push(t);
+    });
 
-  if (pmSlackIds.length > 0) {
-    const allTasksSummary = Object.entries(tasksByAssignee)
-      .map(([slackId, userTasks]) => {
-        const clickupName =
-          Object.entries(clickupToSlack).find(
-            ([, id]) => id === slackId
-          )?.[0] || "Unknown User";
+  for (const [spaceName, spaceTasks] of Object.entries(tasksBySpace)) {
+    const pmNames = projectManagers[spaceName];
+    if (!pmNames || pmNames.length === 0) continue;
 
-        const userLines = userTasks
+    const pmSlackIds = pmNames.map((n) => clickupToSlack[n]).filter(Boolean);
+
+    const summaryByUser = spaceTasks.reduce((acc, t) => {
+      const mainAssignee =
+        t.assignees.length > 0 ? t.assignees[0] : "Unassigned";
+      if (!acc[mainAssignee]) acc[mainAssignee] = [];
+      acc[mainAssignee].push(t);
+      return acc;
+    }, {});
+
+    const spaceSummary = Object.entries(summaryByUser)
+      .map(([assignee, tasks]) => {
+        const taskLines = tasks
           .map((t) => {
             const issues = [];
             if (t.time_spent === 0) issues.push("time not tracked");
-
             const today = new Date();
             const isUpdatedToday =
               t.last_comment_date &&
@@ -142,11 +154,11 @@ export async function sendReminders(tasks) {
           })
           .join("\n\n");
 
-        return `*${clickupName}:*\n${userLines}`;
+        return `*${assignee}:*\n${taskLines}`;
       })
       .join("\n\n");
 
-    const pmMessage = `*Daily Task Summary for All Team Members:*\n\n${allTasksSummary}`;
+    const pmMessage = `*Daily Task Summary for ${spaceName}:*\n\n${spaceSummary}`;
 
     for (const pmId of pmSlackIds) {
       try {
@@ -156,7 +168,7 @@ export async function sendReminders(tasks) {
           unfurl_links: false,
           unfurl_media: false,
         });
-        log(`Summary sent to PM <@${pmId}>`);
+        log(`Summary sent to PM <@${pmId}> for space ${spaceName}`);
       } catch (err) {
         error(`Failed to send PM summary to ${pmId}:`, err.message);
       }

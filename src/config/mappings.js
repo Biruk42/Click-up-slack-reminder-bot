@@ -19,4 +19,6 @@ export const relevantStatuses = [
 ];
 
 export const trackedSpaces = ["Poker Real Gaming & Store"];
-export const projectManagers = ["Melaku Ftwi", "Biruk Abate"];
+export const projectManagers = {
+  "Poker Real Gaming & Store": ["Melaku Ftwi", "Biruk Abate"],
+};
